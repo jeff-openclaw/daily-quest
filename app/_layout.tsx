@@ -12,8 +12,11 @@ function useInjectWebStyles() {
     if (Platform.OS === 'web') {
       const style = document.createElement('style');
       style.textContent = `
-        #root > div > div { max-width: ${Layout.maxAppWidth}px !important; margin: 0 auto !important; }
         body { background: #000 !important; }
+        #root { background: #000 !important; }
+        #root > div { background: #000 !important; }
+        #root > div > div { max-width: ${Layout.maxAppWidth}px !important; margin: 0 auto !important; width: 100% !important; background: #000 !important; }
+        #root > div > div > div { background: #000 !important; }
       `;
       document.head.appendChild(style);
       return () => { document.head.removeChild(style); };
