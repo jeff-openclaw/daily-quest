@@ -124,21 +124,7 @@ export default function TodayScreen() {
           </View>
         )}
 
-        {/* Suggestions */}
-        {activeSuggestions.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeaderRow}>
-              <Ionicons name="sparkles" size={18} color={Colors.xpGold} />
-              <Text style={styles.sectionTitle}>Suggested Quests</Text>
-            </View>
-            <Text style={styles.sectionSub}>Based on your goals</Text>
-            {activeSuggestions.map(s => (
-              <SuggestionCard key={s.templateId} templateId={s.templateId} categoryId={s.categoryId} />
-            ))}
-          </View>
-        )}
-
-        {/* Tasks */}
+        {/* Tasks — front and center */}
         {(todayTasks.length > 0 || !hasNoContent) && (
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
@@ -148,8 +134,9 @@ export default function TodayScreen() {
                 <Text style={styles.countBadge}>{completedCount}/{totalCount}</Text>
               )}
               <View style={{ flex: 1 }} />
-              <Pressable style={styles.iconBtn} onPress={() => setShowRecurringModal(true)}>
-                <Ionicons name="repeat" size={18} color={Colors.textMuted} />
+              <Pressable style={styles.recurringPill} onPress={() => setShowRecurringModal(true)}>
+                <Ionicons name="repeat" size={14} color={Colors.textSecondary} />
+                <Text style={styles.recurringPillText}>Recurring</Text>
               </Pressable>
               <Pressable style={styles.addPill} onPress={() => setShowAddModal(true)}>
                 <Ionicons name="add" size={16} color={Colors.accent} />
@@ -164,7 +151,7 @@ export default function TodayScreen() {
                 <Text style={styles.emptyMiniSub}>
                   {goals.length === 0
                     ? 'Set some goals first, or add a custom quest'
-                    : 'Accept a suggestion above or add your own'}
+                    : 'Accept a suggestion below or add your own'}
                 </Text>
               </View>
             ) : (
@@ -186,6 +173,20 @@ export default function TodayScreen() {
                 )}
               </>
             )}
+          </View>
+        )}
+
+        {/* Suggestions — below tasks */}
+        {activeSuggestions.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="sparkles" size={18} color={Colors.xpGold} />
+              <Text style={styles.sectionTitle}>Suggested Quests</Text>
+            </View>
+            <Text style={styles.sectionSub}>Based on your goals</Text>
+            {activeSuggestions.map(s => (
+              <SuggestionCard key={s.templateId} templateId={s.templateId} categoryId={s.categoryId} />
+            ))}
           </View>
         )}
 
@@ -366,12 +367,21 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: '600',
   },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  recurringPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    marginRight: 6,
+  },
+  recurringPillText: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.xs,
+    fontWeight: '600',
   },
   addPill: {
     flexDirection: 'row',
