@@ -183,6 +183,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
+    justifyContent: 'space-between',
   },
   card: {
     backgroundColor: Colors.surface,
@@ -190,9 +191,9 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
-    width: '48.5%',
-    flexGrow: 0,
+    width: '48%',
     minHeight: 140,
+    marginBottom: 0,
   },
   checkCircle: {
     position: 'absolute',
