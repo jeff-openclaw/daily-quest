@@ -5,18 +5,16 @@ import { Colors, Spacing, FontSize, BorderRadius } from '../../src/constants/the
 import { useStore } from '../../src/store/useStore';
 import { getXpForNextLevel, LEVEL_THRESHOLDS } from '../../src/types';
 import { ProgressBar } from '../../src/components/ProgressBar';
+import { CalendarHeatmap } from '../../src/components/CalendarHeatmap';
+import { AchievementsList } from '../../src/components/AchievementsList';
 
 export default function StatsScreen() {
   const stats = useStore(s => s.stats);
   const levelInfo = getXpForNextLevel(stats.totalXp);
-  const nextThreshold = LEVEL_THRESHOLDS[stats.level] || stats.totalXp + 1000;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.heading}>📊 Your Stats</Text>
 
         {/* Level Card */}
@@ -24,11 +22,7 @@ export default function StatsScreen() {
           <Text style={styles.levelNumber}>{stats.level}</Text>
           <Text style={styles.levelLabel}>Level</Text>
           <View style={styles.levelProgressWrap}>
-            <ProgressBar
-              progress={levelInfo.progress}
-              color={Colors.accent}
-              height={10}
-            />
+            <ProgressBar progress={levelInfo.progress} color={Colors.accent} height={10} />
             <Text style={styles.levelProgressText}>
               {levelInfo.current} / {levelInfo.needed} XP to next level
             </Text>
@@ -37,42 +31,22 @@ export default function StatsScreen() {
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
-          <StatBox
-            icon="⚡"
-            value={stats.totalXp.toLocaleString()}
-            label="Total XP"
-            color={Colors.xpGold}
-          />
-          <StatBox
-            icon="🔥"
-            value={stats.currentStreak.toString()}
-            label="Current Streak"
-            color={Colors.streak}
-          />
-          <StatBox
-            icon="🏆"
-            value={stats.longestStreak.toString()}
-            label="Best Streak"
-            color={Colors.warning}
-          />
-          <StatBox
-            icon="✅"
-            value={stats.totalTasksCompleted.toString()}
-            label="Tasks Done"
-            color={Colors.success}
-          />
-          <StatBox
-            icon="📅"
-            value={stats.totalDaysActive.toString()}
-            label="Days Active"
-            color={Colors.accent}
-          />
-          <StatBox
-            icon="❄️"
-            value={stats.streakFreezes.toString()}
-            label="Streak Freezes"
-            color="#00BCD4"
-          />
+          <StatBox icon="⚡" value={stats.totalXp.toLocaleString()} label="Total XP" color={Colors.xpGold} />
+          <StatBox icon="🔥" value={stats.currentStreak.toString()} label="Current Streak" color={Colors.streak} />
+          <StatBox icon="🏆" value={stats.longestStreak.toString()} label="Best Streak" color={Colors.warning} />
+          <StatBox icon="✅" value={stats.totalTasksCompleted.toString()} label="Tasks Done" color={Colors.success} />
+          <StatBox icon="📅" value={stats.totalDaysActive.toString()} label="Days Active" color={Colors.accent} />
+          <StatBox icon="❄️" value={stats.streakFreezes.toString()} label="Streak Freezes" color="#00BCD4" />
+        </View>
+
+        {/* Calendar Heatmap */}
+        <View style={styles.sectionGap}>
+          <CalendarHeatmap />
+        </View>
+
+        {/* Achievements */}
+        <View style={styles.sectionGap}>
+          <AchievementsList />
         </View>
 
         {/* Motivational */}
@@ -106,96 +80,30 @@ function StatBox({ icon, value, label, color }: { icon: string; value: string; l
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scrollContent: {
-    padding: Spacing.lg,
-    paddingBottom: 120,
-  },
-  heading: {
-    color: Colors.text,
-    fontSize: FontSize.xxl,
-    fontWeight: '800',
-    marginBottom: Spacing.lg,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  scrollContent: { padding: Spacing.lg, paddingBottom: 120 },
+  heading: { color: Colors.text, fontSize: FontSize.xxl, fontWeight: '800', marginBottom: Spacing.lg },
   levelCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.accent + '33',
+    backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: Spacing.xl,
+    alignItems: 'center', marginBottom: Spacing.lg, borderWidth: 1, borderColor: Colors.accent + '33',
   },
-  levelNumber: {
-    color: Colors.accent,
-    fontSize: FontSize.hero,
-    fontWeight: '900',
-  },
-  levelLabel: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    marginBottom: Spacing.lg,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-  },
-  levelProgressWrap: {
-    width: '100%',
-  },
-  levelProgressText: {
-    color: Colors.textMuted,
-    fontSize: FontSize.xs,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
+  levelNumber: { color: Colors.accent, fontSize: FontSize.hero, fontWeight: '900' },
+  levelLabel: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600', marginBottom: Spacing.lg, textTransform: 'uppercase', letterSpacing: 2 },
+  levelProgressWrap: { width: '100%' },
+  levelProgressText: { color: Colors.textMuted, fontSize: FontSize.xs, textAlign: 'center', marginTop: Spacing.sm },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.lg },
   statBox: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    width: '48%',
-    flexGrow: 1,
-    alignItems: 'center',
-    borderWidth: 1,
+    backgroundColor: Colors.surface, borderRadius: BorderRadius.md, padding: Spacing.md,
+    width: '48%', flexGrow: 1, alignItems: 'center', borderWidth: 1,
   },
-  statIcon: {
-    fontSize: 24,
-    marginBottom: Spacing.xs,
-  },
-  statValue: {
-    fontSize: FontSize.xl,
-    fontWeight: '800',
-  },
-  statLabel: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.xs,
-    fontWeight: '600',
-    marginTop: 2,
-  },
+  statIcon: { fontSize: 24, marginBottom: Spacing.xs },
+  statValue: { fontSize: FontSize.xl, fontWeight: '800' },
+  statLabel: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', marginTop: 2 },
+  sectionGap: { marginBottom: Spacing.lg },
   motivational: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: Spacing.xl,
+    alignItems: 'center', borderWidth: 1, borderColor: Colors.surfaceBorder,
   },
-  motivationalEmoji: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
-  },
-  motivationalText: {
-    color: Colors.text,
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
+  motivationalEmoji: { fontSize: 48, marginBottom: Spacing.md },
+  motivationalText: { color: Colors.text, fontSize: FontSize.md, fontWeight: '600', textAlign: 'center' },
 });

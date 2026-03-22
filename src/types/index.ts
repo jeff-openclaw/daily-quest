@@ -1,15 +1,34 @@
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+export type RecurrenceType = 'daily' | 'weekdays' | 'weekly' | 'custom';
+
+export interface RecurrencePattern {
+  type: RecurrenceType;
+  days?: number[]; // 0=Sun, 1=Mon, ... 6=Sat (for 'custom' type)
+}
+
 export interface Task {
   id: string;
   title: string;
   difficulty: Difficulty;
   completed: boolean;
-  createdAt: string; // ISO date
+  createdAt: string;
   completedAt?: string;
   goalId?: string;
   isCustom: boolean;
   isSuggested?: boolean;
+  recurrence?: RecurrencePattern;
+  recurringTaskId?: string; // links back to the recurring template
+}
+
+export interface RecurringTask {
+  id: string;
+  title: string;
+  difficulty: Difficulty;
+  recurrence: RecurrencePattern;
+  goalId?: string;
+  createdAt: string;
+  active: boolean;
 }
 
 export interface Goal {
@@ -37,10 +56,19 @@ export interface GoalCategory {
 }
 
 export interface DayRecord {
-  date: string; // YYYY-MM-DD
+  date: string;
   tasks: Task[];
   xpEarned: number;
   goalMet: boolean;
+  streakFreezeUsed?: boolean;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: string;
 }
 
 export interface UserStats {
@@ -58,6 +86,7 @@ export interface Settings {
   dailyXpGoal: number;
   suggestionsPerDay: number;
   hapticEnabled: boolean;
+  onboardingComplete: boolean;
 }
 
 export const XP_VALUES: Record<Difficulty, number> = {
@@ -95,3 +124,35 @@ export function getStreakMultiplier(streak: number): number {
 export function getTodayString(): string {
   return new Date().toISOString().split('T')[0];
 }
+
+export function shouldRecurToday(recurrence: RecurrencePattern): boolean {
+  const today = new Date().getDay(); // 0=Sun
+  switch (recurrence.type) {
+    case 'daily':
+      return true;
+    case 'weekdays':
+      return today >= 1 && today <= 5;
+    case 'weekly':
+      return today === (recurrence.days?.[0] ?? 0);
+    case 'custom':
+      return recurrence.days?.includes(today) ?? false;
+    default:
+      return false;
+  }
+}
+
+// Achievement definitions
+export const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlockedAt'>[] = [
+  { id: 'first_task', title: 'First Steps', description: 'Complete your first task', icon: '🌱' },
+  { id: 'streak_7', title: 'On Fire', description: 'Reach a 7-day streak', icon: '🔥' },
+  { id: 'streak_30', title: 'Unstoppable', description: 'Reach a 30-day streak', icon: '⚡' },
+  { id: 'xp_100_day', title: 'XP Machine', description: 'Earn 100 XP in a single day', icon: '💰' },
+  { id: 'all_daily', title: 'Perfect Day', description: 'Complete all daily quests', icon: '✨' },
+  { id: 'level_5', title: 'Rising Star', description: 'Reach Level 5', icon: '⭐' },
+  { id: 'level_10', title: 'Veteran', description: 'Reach Level 10', icon: '🏅' },
+  { id: 'level_15', title: 'Elite', description: 'Reach Level 15', icon: '👑' },
+  { id: 'level_20', title: 'Legend', description: 'Reach Level 20', icon: '🏆' },
+  { id: 'tasks_10', title: 'Getting Going', description: 'Complete 10 tasks total', icon: '📋' },
+  { id: 'tasks_50', title: 'Dedicated', description: 'Complete 50 tasks total', icon: '💪' },
+  { id: 'tasks_100', title: 'Centurion', description: 'Complete 100 tasks total', icon: '🗡️' },
+];

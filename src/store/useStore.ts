@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  Task, Goal, DayRecord, UserStats, Settings, Difficulty,
+  Task, Goal, DayRecord, UserStats, Settings, Difficulty, Achievement,
+  RecurringTask, RecurrencePattern,
   XP_VALUES, getTodayString, getStreakMultiplier, getLevelFromXp,
+  shouldRecurToday, ACHIEVEMENT_DEFS,
 } from '../types';
 import { goalCategories } from '../data/taskLibrary';
 
@@ -20,12 +22,29 @@ interface AppState {
   removeTask: (taskId: string) => void;
   acceptSuggestion: (templateId: string, categoryId: string) => void;
 
+  // Recurring tasks
+  recurringTasks: RecurringTask[];
+  addRecurringTask: (title: string, difficulty: Difficulty, recurrence: RecurrencePattern, goalId?: string) => void;
+  removeRecurringTask: (id: string) => void;
+  populateRecurringTasks: () => void;
+
   // Day tracking
   dayRecords: Record<string, DayRecord>;
   ensureToday: () => void;
 
   // Stats
   stats: UserStats;
+
+  // Achievements
+  achievements: Record<string, Achievement>;
+  checkAchievements: () => string | null; // returns newly unlocked achievement id
+
+  // Level up tracking
+  lastLevelUp: number | null;
+  clearLevelUp: () => void;
+
+  // XP animation
+  lastXpGain: { amount: number; timestamp: number } | null;
 
   // Settings
   settings: Settings;
@@ -55,6 +74,10 @@ export const useStore = create<AppState>()(
       goals: [],
       todayTasks: [],
       dayRecords: {},
+      recurringTasks: [],
+      achievements: {},
+      lastLevelUp: null,
+      lastXpGain: null,
       stats: {
         level: 1,
         totalXp: 0,
@@ -69,6 +92,7 @@ export const useStore = create<AppState>()(
         dailyXpGoal: 50,
         suggestionsPerDay: 5,
         hapticEnabled: true,
+        onboardingComplete: false,
       },
       todaySuggestions: [],
 
@@ -82,7 +106,6 @@ export const useStore = create<AppState>()(
           createdAt: new Date().toISOString(),
         };
         set(state => ({ goals: [...state.goals, goal] }));
-        // Regenerate suggestions when goals change
         setTimeout(() => get().generateSuggestions(), 0);
       },
 
@@ -114,6 +137,7 @@ export const useStore = create<AppState>()(
         const multiplier = getStreakMultiplier(state.stats.currentStreak);
         const xpEarned = Math.round(XP_VALUES[task.difficulty] * multiplier);
         const newTotalXp = state.stats.totalXp + xpEarned;
+        const oldLevel = state.stats.level;
         const newLevel = getLevelFromXp(newTotalXp);
 
         set(state => ({
@@ -126,9 +150,11 @@ export const useStore = create<AppState>()(
             level: newLevel,
             totalTasksCompleted: state.stats.totalTasksCompleted + 1,
           },
+          lastXpGain: { amount: xpEarned, timestamp: Date.now() },
+          lastLevelUp: newLevel > oldLevel ? newLevel : state.lastLevelUp,
         }));
 
-        // Check if daily goal met and update streak
+        // Check daily goal & achievements
         setTimeout(() => {
           const s = get();
           const todayXp = s.todayXp();
@@ -155,6 +181,7 @@ export const useStore = create<AppState>()(
               }));
             }
           }
+          s.checkAchievements();
         }, 0);
       },
 
@@ -185,37 +212,140 @@ export const useStore = create<AppState>()(
         }));
       },
 
+      // Recurring tasks
+      addRecurringTask: (title, difficulty, recurrence, goalId) => {
+        const rt: RecurringTask = {
+          id: generateId(),
+          title,
+          difficulty,
+          recurrence,
+          goalId,
+          createdAt: new Date().toISOString(),
+          active: true,
+        };
+        set(state => ({ recurringTasks: [...state.recurringTasks, rt] }));
+        // Immediately add to today if applicable
+        if (shouldRecurToday(recurrence)) {
+          const task: Task = {
+            id: generateId(),
+            title,
+            difficulty,
+            completed: false,
+            createdAt: new Date().toISOString(),
+            goalId,
+            isCustom: true,
+            recurringTaskId: rt.id,
+          };
+          set(state => ({ todayTasks: [...state.todayTasks, task] }));
+        }
+      },
+
+      removeRecurringTask: (id) => {
+        set(state => ({
+          recurringTasks: state.recurringTasks.filter(rt => rt.id !== id),
+          todayTasks: state.todayTasks.filter(t => t.recurringTaskId !== id),
+        }));
+      },
+
+      populateRecurringTasks: () => {
+        const state = get();
+        const existingRecurringIds = new Set(
+          state.todayTasks.filter(t => t.recurringTaskId).map(t => t.recurringTaskId)
+        );
+        const newTasks: Task[] = [];
+        for (const rt of state.recurringTasks) {
+          if (!rt.active) continue;
+          if (existingRecurringIds.has(rt.id)) continue;
+          if (!shouldRecurToday(rt.recurrence)) continue;
+          newTasks.push({
+            id: generateId(),
+            title: rt.title,
+            difficulty: rt.difficulty,
+            completed: false,
+            createdAt: new Date().toISOString(),
+            goalId: rt.goalId,
+            isCustom: true,
+            recurringTaskId: rt.id,
+          });
+        }
+        if (newTasks.length > 0) {
+          set(state => ({ todayTasks: [...newTasks, ...state.todayTasks] }));
+        }
+      },
+
       ensureToday: () => {
         const today = getTodayString();
         const state = get();
         const lastRecord = Object.keys(state.dayRecords).sort().pop();
 
         if (lastRecord && lastRecord !== today) {
-          // New day — save yesterday's tasks and reset
-          const yesterday = lastRecord;
-          const yesterdayRecord = state.dayRecords[yesterday];
+          const yesterdayRecord = state.dayRecords[lastRecord];
           if (yesterdayRecord && !yesterdayRecord.goalMet) {
-            // Streak broken unless freeze used
             if (state.stats.streakFreezes > 0) {
-              // Auto-use freeze
               set(s => ({
                 stats: {
                   ...s.stats,
                   streakFreezes: s.stats.streakFreezes - 1,
                   streakFreezesUsed: s.stats.streakFreezesUsed + 1,
                 },
+                dayRecords: {
+                  ...s.dayRecords,
+                  [lastRecord]: { ...s.dayRecords[lastRecord], streakFreezeUsed: true },
+                },
               }));
             } else {
               set(s => ({ stats: { ...s.stats, currentStreak: 0 } }));
             }
           }
-          // Clear today's tasks
           set({ todayTasks: [], todaySuggestions: [] });
-          setTimeout(() => get().generateSuggestions(), 0);
+          setTimeout(() => {
+            get().generateSuggestions();
+            get().populateRecurringTasks();
+          }, 0);
         } else if (!lastRecord && state.todayTasks.length === 0) {
           get().generateSuggestions();
+          get().populateRecurringTasks();
+        } else {
+          // Same day, still populate any missing recurring tasks
+          get().populateRecurringTasks();
         }
       },
+
+      // Achievements
+      checkAchievements: () => {
+        const state = get();
+        const s = state.stats;
+        const todayXp = state.todayXp();
+        const todayTasks = state.todayTasks;
+        const current = { ...state.achievements };
+        let newlyUnlocked: string | null = null;
+
+        const tryUnlock = (id: string) => {
+          if (current[id]) return;
+          const def = ACHIEVEMENT_DEFS.find(a => a.id === id);
+          if (!def) return;
+          current[id] = { ...def, unlockedAt: new Date().toISOString() };
+          if (!newlyUnlocked) newlyUnlocked = id;
+        };
+
+        if (s.totalTasksCompleted >= 1) tryUnlock('first_task');
+        if (s.totalTasksCompleted >= 10) tryUnlock('tasks_10');
+        if (s.totalTasksCompleted >= 50) tryUnlock('tasks_50');
+        if (s.totalTasksCompleted >= 100) tryUnlock('tasks_100');
+        if (s.currentStreak >= 7 || s.longestStreak >= 7) tryUnlock('streak_7');
+        if (s.currentStreak >= 30 || s.longestStreak >= 30) tryUnlock('streak_30');
+        if (todayXp >= 100) tryUnlock('xp_100_day');
+        if (todayTasks.length > 0 && todayTasks.every(t => t.completed)) tryUnlock('all_daily');
+        if (s.level >= 5) tryUnlock('level_5');
+        if (s.level >= 10) tryUnlock('level_10');
+        if (s.level >= 15) tryUnlock('level_15');
+        if (s.level >= 20) tryUnlock('level_20');
+
+        set({ achievements: current });
+        return newlyUnlocked;
+      },
+
+      clearLevelUp: () => set({ lastLevelUp: null }),
 
       updateSettings: (s) => {
         set(state => ({ settings: { ...state.settings, ...s } }));
@@ -236,9 +366,7 @@ export const useStore = create<AppState>()(
         for (const goal of activeGoals) {
           const category = goalCategories.find(c => c.id === goal.categoryId);
           if (!category) continue;
-
           const available = category.tasks.filter(t => !existingTitles.has(t.title));
-          // Shuffle
           const shuffled = [...available].sort(() => Math.random() - 0.5);
           const picked = shuffled.slice(0, perGoal);
           for (const t of picked) {
