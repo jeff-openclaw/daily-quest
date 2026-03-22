@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import { useStore } from '../store/useStore';
 import { ACHIEVEMENT_DEFS } from '../types';
@@ -12,22 +13,23 @@ export function AchievementsList() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>🏆 Achievements</Text>
+        <Text style={styles.title}>Achievements</Text>
         <Text style={styles.count}>{unlocked}/{total}</Text>
       </View>
       <View style={styles.grid}>
         {ACHIEVEMENT_DEFS.map(def => {
           const isUnlocked = !!achievements[def.id];
           return (
-            <View key={def.id} style={[styles.card, isUnlocked && styles.cardUnlocked]}>
-              <Text style={[styles.icon, !isUnlocked && styles.iconLocked]}>
-                {isUnlocked ? def.icon : '🔒'}
-              </Text>
+            <View key={def.id} style={[styles.badge, isUnlocked && styles.badgeUnlocked]}>
+              <View style={[styles.circle, isUnlocked && styles.circleUnlocked]}>
+                {isUnlocked ? (
+                  <Text style={styles.badgeEmoji}>{def.icon}</Text>
+                ) : (
+                  <Ionicons name="lock-closed" size={18} color={Colors.textMuted} />
+                )}
+              </View>
               <Text style={[styles.name, !isUnlocked && styles.nameLocked]} numberOfLines={1}>
                 {def.title}
-              </Text>
-              <Text style={[styles.desc, !isUnlocked && styles.descLocked]} numberOfLines={2}>
-                {def.description}
               </Text>
             </View>
           );
@@ -65,44 +67,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
+    justifyContent: 'center',
   },
-  card: {
-    width: '48%',
-    flexGrow: 1,
-    backgroundColor: Colors.surfaceLight,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+  badge: {
+    width: 72,
     alignItems: 'center',
-    borderWidth: 1,
+    paddingVertical: Spacing.sm,
+  },
+  badgeUnlocked: {},
+  circle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.surfaceLight,
+    borderWidth: 2,
     borderColor: Colors.surfaceBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
-  cardUnlocked: {
-    borderColor: Colors.xpGold + '44',
-    backgroundColor: Colors.xpGold + '0A',
+  circleUnlocked: {
+    borderColor: Colors.xpGold + '66',
+    backgroundColor: Colors.xpGold + '12',
   },
-  icon: {
-    fontSize: 28,
-    marginBottom: Spacing.xs,
-  },
-  iconLocked: {
-    opacity: 0.4,
-  },
+  badgeEmoji: { fontSize: 22 },
   name: {
     color: Colors.text,
-    fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '600',
     textAlign: 'center',
   },
   nameLocked: {
-    color: Colors.textMuted,
-  },
-  desc: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.xs,
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  descLocked: {
     color: Colors.textMuted,
   },
 });

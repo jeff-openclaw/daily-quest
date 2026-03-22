@@ -2,13 +2,15 @@ export const Colors = {
   background: '#000000',
   surface: '#111111',
   surfaceLight: '#1A1A1A',
+  surfaceElevated: '#1A1A1A',
   surfaceBorder: '#222222',
   text: '#FFFFFF',
-  textSecondary: '#888888',
-  textMuted: '#555555',
+  textSecondary: '#999999',
+  textMuted: '#666666',
   accent: '#7C4DFF', // vibrant purple
   accentLight: '#B47CFF',
-  success: '#00E676', // green for completion
+  accentDim: 'rgba(124, 77, 255, 0.12)',
+  success: '#00E676',
   successDark: '#00C853',
   warning: '#FFD740',
   danger: '#FF5252',
@@ -36,7 +38,7 @@ export const FontSize = {
   xl: 22,
   xxl: 28,
   xxxl: 36,
-  hero: 48,
+  hero: 56,
 };
 
 export const BorderRadius = {
@@ -45,4 +47,11 @@ export const BorderRadius = {
   lg: 16,
   xl: 24,
   full: 9999,
+};
+
+// Max width for phone-like container on desktop/tablet
+export const Layout = {
+  maxAppWidth: 480,
+  tabBarHeight: 72,
+  minTouchTarget: 44,
 };

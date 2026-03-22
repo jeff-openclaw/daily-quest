@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import { useStore } from '../store/useStore';
 import { goalCategories } from '../data/taskLibrary';
@@ -7,13 +8,13 @@ import { goalCategories } from '../data/taskLibrary';
 const SCREENS = [
   {
     emoji: '⚔️',
-    title: 'Welcome to\nDaily Quest!',
-    subtitle: 'Turn your daily habits into an epic adventure. Complete quests, earn XP, and level up!',
+    title: 'Welcome to\nDaily Quest',
+    subtitle: 'Turn your daily habits into an epic adventure.\nComplete quests, earn XP, and level up!',
   },
   {
     emoji: '🎮',
     title: 'How It Works',
-    subtitle: '• Complete tasks to earn XP\n• Meet your daily XP goal to build streaks 🔥\n• Streaks give you bonus XP multipliers\n• Level up as you earn more XP\n• Unlock achievements along the way!',
+    subtitle: '✦ Complete tasks to earn XP\n✦ Meet your daily goal to build streaks 🔥\n✦ Streaks boost your XP multiplier\n✦ Level up and unlock achievements',
   },
 ];
 
@@ -24,7 +25,6 @@ export function OnboardingFlow() {
   const updateSettings = useStore(s => s.updateSettings);
 
   const isGoalScreen = screen === 2;
-  const isLastScreen = screen === 2;
 
   const toggleGoal = (categoryId: string) => {
     setSelectedGoals(prev => {
@@ -44,11 +44,8 @@ export function OnboardingFlow() {
   };
 
   const handleNext = () => {
-    if (isLastScreen) {
-      handleFinish();
-    } else {
-      setScreen(s => s + 1);
-    }
+    if (screen === 2) handleFinish();
+    else setScreen(s => s + 1);
   };
 
   if (!isGoalScreen) {
@@ -67,10 +64,11 @@ export function OnboardingFlow() {
             ))}
           </View>
           <Pressable style={styles.nextBtn} onPress={handleNext}>
-            <Text style={styles.nextBtnText}>Next →</Text>
+            <Text style={styles.nextBtnText}>Next</Text>
+            <Ionicons name="arrow-forward" size={18} color="#FFF" />
           </Pressable>
           {screen === 0 && (
-            <Pressable style={styles.skipBtn} onPress={() => { updateSettings({ onboardingComplete: true }); }}>
+            <Pressable style={styles.skipBtn} onPress={() => updateSettings({ onboardingComplete: true })}>
               <Text style={styles.skipBtnText}>Skip intro</Text>
             </Pressable>
           )}
@@ -79,12 +77,11 @@ export function OnboardingFlow() {
     );
   }
 
-  // Goal selection screen
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.goalScrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.goalTitle}>🎯 Pick Your Goals</Text>
-        <Text style={styles.goalSubtitle}>Choose what you want to work on. You can change these anytime.</Text>
+      <ScrollView contentContainerStyle={styles.goalScroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.goalHeading}>Pick Your Goals</Text>
+        <Text style={styles.goalSub}>Choose what you want to work on. You can change these anytime.</Text>
         <View style={styles.goalGrid}>
           {goalCategories.map(cat => {
             const selected = selectedGoals.has(cat.id);
@@ -96,7 +93,11 @@ export function OnboardingFlow() {
               >
                 <Text style={styles.goalIcon}>{cat.icon}</Text>
                 <Text style={styles.goalName}>{cat.title}</Text>
-                {selected && <Text style={styles.goalCheck}>✓</Text>}
+                {selected && (
+                  <View style={styles.goalCheck}>
+                    <Ionicons name="checkmark" size={14} color="#FFF" />
+                  </View>
+                )}
               </Pressable>
             );
           })}
@@ -110,8 +111,9 @@ export function OnboardingFlow() {
         </View>
         <Pressable style={styles.nextBtn} onPress={handleFinish}>
           <Text style={styles.nextBtnText}>
-            {selectedGoals.size > 0 ? 'Start Your Adventure! ⚔️' : 'Skip for now'}
+            {selectedGoals.size > 0 ? 'Start Your Adventure!' : 'Skip for now'}
           </Text>
+          <Ionicons name="arrow-forward" size={18} color="#FFF" />
         </Pressable>
       </View>
     </View>
@@ -130,16 +132,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.xl,
   },
-  emoji: {
-    fontSize: 80,
-    marginBottom: Spacing.lg,
-  },
+  emoji: { fontSize: 72, marginBottom: Spacing.lg },
   title: {
     color: Colors.text,
-    fontSize: FontSize.xxxl,
+    fontSize: 32,
     fontWeight: '900',
     textAlign: 'center',
     marginBottom: Spacing.md,
+    letterSpacing: -0.5,
+    lineHeight: 38,
   },
   subtitle: {
     color: Colors.textSecondary,
@@ -154,10 +155,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
   },
-  dots: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
+  dots: { flexDirection: 'row', gap: Spacing.sm },
   dot: {
     width: 8,
     height: 8,
@@ -169,49 +167,47 @@ const styles = StyleSheet.create({
     width: 24,
   },
   nextBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: Colors.accent,
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
+    paddingVertical: 16,
     borderRadius: BorderRadius.full,
     width: '100%',
-    alignItems: 'center',
   },
   nextBtnText: {
     color: Colors.text,
     fontSize: FontSize.lg,
     fontWeight: '700',
   },
-  skipBtn: {
-    paddingVertical: Spacing.sm,
-  },
-  skipBtnText: {
-    color: Colors.textMuted,
-    fontSize: FontSize.sm,
-  },
-  goalScrollContent: {
+  skipBtn: { paddingVertical: Spacing.sm },
+  skipBtnText: { color: Colors.textMuted, fontSize: FontSize.sm },
+
+  // Goal screen
+  goalScroll: {
     padding: Spacing.lg,
     paddingBottom: Spacing.md,
   },
-  goalTitle: {
+  goalHeading: {
     color: Colors.text,
     fontSize: FontSize.xxl,
     fontWeight: '900',
     textAlign: 'center',
-    marginBottom: Spacing.sm,
     marginTop: Spacing.xxl,
+    marginBottom: Spacing.sm,
   },
-  goalSubtitle: {
+  goalSub: {
     color: Colors.textSecondary,
     fontSize: FontSize.md,
     textAlign: 'center',
     marginBottom: Spacing.lg,
   },
-  goalGrid: {
-    gap: Spacing.sm,
-  },
+  goalGrid: { gap: Spacing.sm },
   goalCard: {
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
     padding: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
@@ -221,11 +217,9 @@ const styles = StyleSheet.create({
   },
   goalCardSelected: {
     borderColor: Colors.accent,
-    backgroundColor: Colors.accent + '11',
+    backgroundColor: 'rgba(124, 77, 255, 0.08)',
   },
-  goalIcon: {
-    fontSize: 28,
-  },
+  goalIcon: { fontSize: 26 },
   goalName: {
     color: Colors.text,
     fontSize: FontSize.md,
@@ -233,8 +227,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   goalCheck: {
-    color: Colors.accent,
-    fontSize: FontSize.xl,
-    fontWeight: '700',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

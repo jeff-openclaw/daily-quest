@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../src/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Spacing, FontSize, BorderRadius, Layout } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { goalCategories } from '../../src/data/taskLibrary';
+
+const CATEGORY_ACCENTS: Record<string, string> = {
+  health: '#00E676',
+  learning: '#448AFF',
+  productivity: '#FF6D00',
+  mindfulness: '#AA00FF',
+  social: '#FF4081',
+  creative: '#FFD740',
+  finance: '#00BFA5',
+};
 
 export default function GoalsScreen() {
   const goals = useStore(s => s.goals);
@@ -18,33 +29,34 @@ export default function GoalsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.heading}>🎯 Your Goals</Text>
+        <Text style={styles.heading}>Your Goals</Text>
         <Text style={styles.subtitle}>
-          Choose goals and we'll suggest daily quests to help you achieve them
+          Choose goals and we'll suggest daily quests to help you level up
         </Text>
 
         {/* Active Goals */}
         {goals.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active Goals</Text>
+            <Text style={styles.sectionLabel}>Active</Text>
             {goals.map(goal => {
               const category = goalCategories.find(c => c.id === goal.categoryId);
+              const accent = CATEGORY_ACCENTS[goal.categoryId] || Colors.accent;
               return (
-                <View key={goal.id} style={styles.activeGoalCard}>
-                  <View style={styles.activeGoalInfo}>
-                    <Text style={styles.activeGoalIcon}>{goal.icon}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.activeGoalTitle}>{goal.title}</Text>
-                      <Text style={styles.activeGoalTasks}>
-                        {category?.tasks.length || 0} quests available
-                      </Text>
-                    </View>
+                <View key={goal.id} style={[styles.activeCard, { borderColor: accent + '33' }]}>
+                  <View style={[styles.activeIconWrap, { backgroundColor: accent + '1A' }]}>
+                    <Text style={styles.activeIcon}>{goal.icon}</Text>
+                  </View>
+                  <View style={styles.activeInfo}>
+                    <Text style={styles.activeTitle}>{goal.title}</Text>
+                    <Text style={styles.activeSub}>
+                      {category?.tasks.length || 0} quests available
+                    </Text>
                   </View>
                   <Pressable
                     style={styles.removeBtn}
                     onPress={() => removeGoal(goal.id)}
                   >
-                    <Text style={styles.removeBtnText}>Remove</Text>
+                    <Ionicons name="close" size={16} color={Colors.danger} />
                   </Pressable>
                 </View>
               );
@@ -52,18 +64,22 @@ export default function GoalsScreen() {
           </View>
         )}
 
-        {/* Available Categories */}
+        {/* Category Grid */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {goals.length === 0 ? 'Pick your goals' : 'Add more goals'}
+          <Text style={styles.sectionLabel}>
+            {goals.length === 0 ? 'Pick your goals' : 'Add more'}
           </Text>
-          <View style={styles.categoryGrid}>
+          <View style={styles.grid}>
             {goalCategories.map(category => {
               const isActive = activeGoalCategoryIds.has(category.id);
+              const accent = CATEGORY_ACCENTS[category.id] || Colors.accent;
               return (
                 <Pressable
                   key={category.id}
-                  style={[styles.categoryCard, isActive && styles.categoryCardActive]}
+                  style={[
+                    styles.card,
+                    isActive && { borderColor: accent + '55', backgroundColor: accent + '08' },
+                  ]}
                   onPress={() => {
                     if (isActive) {
                       const goal = goals.find(g => g.categoryId === category.id);
@@ -73,17 +89,17 @@ export default function GoalsScreen() {
                     }
                   }}
                 >
-                  <Text style={styles.categoryIcon}>{category.icon}</Text>
-                  <Text style={styles.categoryTitle}>{category.title}</Text>
-                  <Text style={styles.categoryDesc}>{category.description}</Text>
-                  <Text style={styles.categoryTaskCount}>
-                    {category.tasks.length} quests
-                  </Text>
                   {isActive && (
-                    <View style={styles.activeBadge}>
-                      <Text style={styles.activeBadgeText}>✓ Active</Text>
+                    <View style={[styles.checkCircle, { backgroundColor: accent }]}>
+                      <Ionicons name="checkmark" size={12} color="#000" />
                     </View>
                   )}
+                  <Text style={styles.cardIcon}>{category.icon}</Text>
+                  <Text style={styles.cardTitle}>{category.title}</Text>
+                  <Text style={styles.cardDesc} numberOfLines={2}>{category.description}</Text>
+                  <Text style={[styles.cardCount, isActive && { color: accent }]}>
+                    {category.tasks.length} quests
+                  </Text>
                 </Pressable>
               );
             })}
@@ -92,30 +108,28 @@ export default function GoalsScreen() {
 
         {goals.length === 0 && (
           <View style={styles.hint}>
+            <Ionicons name="bulb" size={16} color={Colors.xpGold} />
             <Text style={styles.hintText}>
-              💡 Tap a goal category to activate it. We'll suggest daily quests from your active goals!
+              Tap a goal to activate it. We'll suggest daily quests from your active goals!
             </Text>
           </View>
         )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scrollContent: {
-    padding: Spacing.lg,
-    paddingBottom: 120,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  scrollContent: { padding: Spacing.lg, paddingBottom: Layout.tabBarHeight + 40 },
   heading: {
     color: Colors.text,
     fontSize: FontSize.xxl,
     fontWeight: '800',
-    marginBottom: Spacing.xs,
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
   subtitle: {
     color: Colors.textSecondary,
@@ -123,109 +137,105 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     lineHeight: 22,
   },
-  section: {
-    marginBottom: Spacing.lg,
-  },
-  sectionTitle: {
-    color: Colors.text,
-    fontSize: FontSize.lg,
+  section: { marginBottom: Spacing.lg },
+  sectionLabel: {
+    color: Colors.textMuted,
+    fontSize: FontSize.xs,
     fontWeight: '700',
-    marginBottom: Spacing.md,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: Spacing.sm,
   },
-  activeGoalCard: {
+
+  // Active goal cards
+  activeCard: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    padding: 14,
     marginBottom: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.accent + '33',
-  },
-  activeGoalInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    marginBottom: Spacing.sm,
+    gap: 12,
   },
-  activeGoalIcon: {
-    fontSize: 28,
+  activeIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  activeGoalTitle: {
-    color: Colors.text,
-    fontSize: FontSize.md,
-    fontWeight: '600',
-  },
-  activeGoalTasks: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.sm,
-  },
+  activeIcon: { fontSize: 22 },
+  activeInfo: { flex: 1 },
+  activeTitle: { color: Colors.text, fontSize: FontSize.md, fontWeight: '600' },
+  activeSub: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
   removeBtn: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    backgroundColor: Colors.danger + '22',
-    borderRadius: BorderRadius.sm,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 82, 82, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  removeBtnText: {
-    color: Colors.danger,
-    fontSize: FontSize.sm,
-    fontWeight: '600',
-  },
-  categoryGrid: {
+
+  // Grid
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.sm,
   },
-  categoryCard: {
+  card: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
+    width: '48.5%',
+    flexGrow: 0,
+    minHeight: 140,
   },
-  categoryCardActive: {
-    borderColor: Colors.accent,
-    backgroundColor: Colors.accent + '0D',
+  checkCircle: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  categoryIcon: {
-    fontSize: 32,
-    marginBottom: Spacing.sm,
-  },
-  categoryTitle: {
+  cardIcon: { fontSize: 28, marginBottom: 8 },
+  cardTitle: {
     color: Colors.text,
-    fontSize: FontSize.lg,
+    fontSize: FontSize.md,
     fontWeight: '700',
-    marginBottom: Spacing.xs,
+    marginBottom: 4,
   },
-  categoryDesc: {
+  cardDesc: {
     color: Colors.textSecondary,
-    fontSize: FontSize.sm,
-    marginBottom: Spacing.sm,
+    fontSize: FontSize.xs,
+    lineHeight: 16,
+    marginBottom: 8,
   },
-  categoryTaskCount: {
+  cardCount: {
     color: Colors.textMuted,
     fontSize: FontSize.xs,
     fontWeight: '600',
   },
-  activeBadge: {
-    position: 'absolute',
-    top: Spacing.md,
-    right: Spacing.md,
-    backgroundColor: Colors.success + '22',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
-  activeBadgeText: {
-    color: Colors.success,
-    fontSize: FontSize.xs,
-    fontWeight: '700',
-  },
+
+  // Hint
   hint: {
-    backgroundColor: Colors.accent + '11',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: 'rgba(255, 215, 0, 0.06)',
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.accent + '33',
+    borderColor: 'rgba(255, 215, 0, 0.15)',
   },
   hintText: {
+    flex: 1,
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
     lineHeight: 20,

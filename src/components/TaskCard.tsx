@@ -6,22 +6,22 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import { Task, XP_VALUES, Difficulty } from '../types';
 import { useStore } from '../store/useStore';
 
-const DIFFICULTY_COLORS: Record<Difficulty, string> = {
+const DIFF_COLORS: Record<Difficulty, string> = {
   easy: Colors.easy,
   medium: Colors.medium,
   hard: Colors.hard,
 };
 
-const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+const DIFF_LABELS: Record<Difficulty, string> = {
   easy: 'Easy',
-  medium: 'Medium',
+  medium: 'Med',
   hard: 'Hard',
 };
 
@@ -38,29 +38,25 @@ export function TaskCard({ task, onComplete }: TaskCardProps) {
   const hapticEnabled = useStore(s => s.settings.hapticEnabled);
 
   const scale = useSharedValue(1);
-  const checkScale = useSharedValue(task.completed ? 1 : 0);
   const opacity = useSharedValue(1);
-  const strikethrough = useSharedValue(task.completed ? 1 : 0);
 
   const handleComplete = useCallback(() => {
     if (task.completed) return;
-
     if (hapticEnabled && Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-
     scale.value = withSequence(
-      withSpring(1.05, { damping: 8 }),
+      withSpring(0.97, { damping: 8 }),
       withSpring(1, { damping: 12 })
     );
-    checkScale.value = withSpring(1, { damping: 10, stiffness: 200 });
-    strikethrough.value = withTiming(1, { duration: 300 });
-
     completeTask(task.id);
     onComplete?.();
   }, [task.id, task.completed, hapticEnabled]);
 
   const handleRemove = useCallback(() => {
+    if (hapticEnabled && Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     opacity.value = withTiming(0, { duration: 200 });
     setTimeout(() => removeTask(task.id), 200);
   }, [task.id]);
@@ -70,38 +66,42 @@ export function TaskCard({ task, onComplete }: TaskCardProps) {
     opacity: opacity.value,
   }));
 
-  const checkAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: checkScale.value }],
-  }));
-
-  const difficultyColor = DIFFICULTY_COLORS[task.difficulty];
+  const diffColor = DIFF_COLORS[task.difficulty];
   const xp = XP_VALUES[task.difficulty];
 
   return (
     <AnimatedPressable
-      style={[styles.container, animatedStyle, task.completed && styles.completedContainer]}
+      style={[styles.container, animatedStyle, task.completed && styles.containerDone]}
       onPress={handleComplete}
       onLongPress={handleRemove}
     >
-      <View style={styles.leftSection}>
-        <View style={[styles.checkbox, task.completed && { backgroundColor: Colors.success, borderColor: Colors.success }]}>
-          {task.completed && (
-            <Animated.Text style={[styles.checkmark, checkAnimatedStyle]}>✓</Animated.Text>
-          )}
-        </View>
-        <View style={styles.textSection}>
-          <Text style={[styles.title, task.completed && styles.completedTitle]} numberOfLines={2}>
-            {task.title}
+      {/* Checkbox */}
+      <View style={[styles.checkbox, task.completed && styles.checkboxDone]}>
+        {task.completed && (
+          <Ionicons name="checkmark" size={14} color={Colors.background} />
+        )}
+      </View>
+
+      {/* Text + meta */}
+      <View style={styles.center}>
+        <Text
+          style={[styles.title, task.completed && styles.titleDone]}
+          numberOfLines={2}
+        >
+          {task.title}
+        </Text>
+      </View>
+
+      {/* Right side: difficulty + XP */}
+      <View style={styles.right}>
+        <View style={[styles.diffPill, { backgroundColor: diffColor + '1A' }]}>
+          <Text style={[styles.diffText, { color: diffColor }]}>
+            {DIFF_LABELS[task.difficulty]}
           </Text>
-          <View style={styles.metaRow}>
-            <View style={[styles.difficultyBadge, { backgroundColor: difficultyColor + '22' }]}>
-              <Text style={[styles.difficultyText, { color: difficultyColor }]}>
-                {DIFFICULTY_LABELS[task.difficulty]}
-              </Text>
-            </View>
-            <Text style={styles.xpText}>+{xp} XP</Text>
-          </View>
         </View>
+        <Text style={[styles.xpText, task.completed && styles.xpDone]}>
+          +{xp} XP
+        </Text>
       </View>
     </AnimatedPressable>
   );
@@ -111,65 +111,67 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    padding: 14,
+    marginTop: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
-  },
-  completedContainer: {
-    opacity: 0.6,
-    borderColor: Colors.success + '33',
-  },
-  leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 56,
+  },
+  containerDone: {
+    opacity: 0.55,
+    borderColor: 'rgba(0, 230, 118, 0.15)',
   },
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: BorderRadius.sm,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: Colors.textMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.md,
+    marginRight: 12,
   },
-  checkmark: {
-    color: Colors.background,
-    fontSize: 16,
-    fontWeight: '700',
+  checkboxDone: {
+    backgroundColor: Colors.success,
+    borderColor: Colors.success,
   },
-  textSection: {
+  center: {
     flex: 1,
+    marginRight: 12,
   },
   title: {
     color: Colors.text,
     fontSize: FontSize.md,
     fontWeight: '600',
-    marginBottom: Spacing.xs,
+    lineHeight: 20,
   },
-  completedTitle: {
+  titleDone: {
     textDecorationLine: 'line-through',
     color: Colors.textSecondary,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
+  right: {
+    alignItems: 'flex-end',
+    gap: 4,
   },
-  difficultyBadge: {
-    paddingHorizontal: Spacing.sm,
+  diffPill: {
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: BorderRadius.full,
   },
-  difficultyText: {
-    fontSize: FontSize.xs,
-    fontWeight: '700',
+  diffText: {
+    fontSize: 10,
+    fontWeight: '800',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   xpText: {
     color: Colors.xpGold,
     fontSize: FontSize.xs,
     fontWeight: '700',
+  },
+  xpDone: {
+    color: Colors.textMuted,
   },
 });
