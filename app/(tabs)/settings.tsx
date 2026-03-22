@@ -127,7 +127,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  scrollContent: { padding: Spacing.lg, paddingBottom: Layout.tabBarHeight + 40 },
+  scrollContent: { padding: Spacing.lg, paddingBottom: Layout.tabBarHeight + 40, maxWidth: Layout.maxAppWidth, alignSelf: 'center' as const, width: '100%' },
   heading: {
     color: Colors.text,
     fontSize: FontSize.xxl,

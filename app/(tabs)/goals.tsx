@@ -1,10 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, useWindowDimensions, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, BorderRadius, Layout } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { goalCategories } from '../../src/data/taskLibrary';
+
+function useCardWidth() {
+  const { width: windowWidth } = useWindowDimensions();
+  const containerWidth = Math.min(windowWidth, Layout.maxAppWidth) - Spacing.lg * 2;
+  return Math.floor((containerWidth - Spacing.sm) / 2);
+}
 
 const CATEGORY_ACCENTS: Record<string, string> = {
   health: '#00E676',
@@ -22,6 +28,7 @@ export default function GoalsScreen() {
   const removeGoal = useStore(s => s.removeGoal);
 
   const activeGoalCategoryIds = new Set(goals.map(g => g.categoryId));
+  const cardWidth = useCardWidth();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -78,6 +85,7 @@ export default function GoalsScreen() {
                   key={category.id}
                   style={[
                     styles.card,
+                    { width: cardWidth },
                     isActive && { borderColor: accent + '55', backgroundColor: accent + '08' },
                   ]}
                   onPress={() => {
@@ -182,8 +190,8 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
     justifyContent: 'space-between',
+    rowGap: Spacing.sm,
   },
   card: {
     backgroundColor: Colors.surface,
@@ -191,9 +199,7 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
-    width: '48%',
     minHeight: 140,
-    marginBottom: 0,
   },
   checkCircle: {
     position: 'absolute',
