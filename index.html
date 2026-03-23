@@ -32,6 +32,14 @@
     </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
+    <script>
+      window.onerror = function(m,s,l,c,e) {
+        document.getElementById('root').innerHTML = '<pre style="color:red;padding:20px">' + m + '\n' + (e&&e.stack||'') + '</pre>';
+      };
+      window.addEventListener('unhandledrejection', function(ev) {
+        document.getElementById('root').innerHTML = '<pre style="color:red;padding:20px">Unhandled: ' + ev.reason + '\n' + (ev.reason&&ev.reason.stack||'') + '</pre>';
+      });
+    </script>
   <script src="/daily-quest/_expo/static/js/web/entry-cc025c3ab5d21a75cfb4ec55237f51fb.js" defer></script>
 </body>
 </html>
